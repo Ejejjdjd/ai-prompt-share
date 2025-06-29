@@ -1,0 +1,162 @@
+这是缩小尺寸的<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSeek AI 助手</title>
+    <style>
+        /* 界面样式优化 */
+        :root {
+            --primary-color: #2E5AAC;
+            --bg-color: #F8F9FA;
+        }
+
+        body {
+            background: var(--bg-color);
+            font-family: 'Segoe UI', system-ui;
+            margin: 0;
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        .chat-container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .messages {
+            height: 60vh;
+            padding: 15px;
+            overflow-y: auto;
+            border-bottom: 1px solid #eee;
+        }
+
+        .message {
+            margin: 8px 0;
+            padding: 10px 15px;
+            border-radius: 12px;
+            max-width: 70%;
+        }
+
+        .user-message {
+            background: var(--primary-color);
+            color: white;
+            margin-left: auto;
+            border: 2px solid #254D9C;
+        }
+
+        .ai-message {
+            background: #F1F3F5;
+            color: #333;
+            border: 2px solid #E2E8F0;
+            position: relative;
+        }
+
+        .ai-message::after {
+            content: "";
+            position: absolute;
+            right: -8px;
+            top: 12px;
+            border: 8px solid transparent;
+            border-left-color: #F1F3F5;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            background: #fff;
+        }
+
+        #message-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        button {
+            padding: 12px 20px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .loading {
+            display: none;
+            color: #666;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="messages" id="messages"></div>
+        <div class="input-area">
+            <input type="text" id="message-input" placeholder="输入你的问题...">
+            <button onclick="sendMessage()" id="sendBtn">发送</button>
+            <span class="loading" id="loading"></span>
+        </div>
+    </div>
+
+    <script>
+        // API配置（请替换为您自己的API端点和密钥）
+        const API_CONFIG = {
+            endpoint: '', // 请填写您的API端点
+            apiKey: '',   // 请填写您的API密钥
+            model: 'deepseek-chat'
+        };
+
+        async function sendMessage() {
+            const input = document.getElementById('message-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            appendMessage(message, 'user');
+            input.value = '';
+            scrollToBottom();
+
+            try {
+                const loading = document.getElementById('loading');
+                loading.style.display = 'inline';
+
+                const response = await fetch(API_CONFIG.endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_CONFIG.apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: API_CONFIG.model,
+                        messages: [{ role: "user", content: message }],
+                        temperature: 0.7,
+                        max_tokens: 1000
+                    })
+                });
+
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                const data = await response.json();
+                const aiReply = data.choices[0]?.message?.content || '未收到有效回复';
+                appendMessage(aiReply, 'ai');
+
+            } catch (error) {
+                console.error('API调用失败:', error);
+   
